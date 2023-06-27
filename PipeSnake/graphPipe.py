@@ -40,9 +40,4 @@ def graphPipe(points, time):
     plt.show()
     plt.close(fig=fig)
     
-graphPipe([(0.,3.), (-2.,2.236), (-3,0)], 10)
-    
-    
-    
-    
-    
+graphPipe([(0.,3.), (-2.,2.236), (-3,0)], 10)   
