@@ -11,7 +11,7 @@ import transforms3d as t3d
 from itertools import accumulate
 import operator
 
-# builds the template of x y transformation matrices at each z level
+
 def template_gen(width, height):
     transforms = torch.zeros((height*width, 4, 4))
     lowx = 0 
@@ -19,46 +19,37 @@ def template_gen(width, height):
     lowy = int(0-width/2)
     highy = int(width/2)
 
-    # rotation matrix to rotate image plane to xy for ease of use
     T2 = torch.tensor([  [0.0000000,  -1.0000000,  0.0000000, 0],
                      [1.0000000,  0.0000000,  0.0000000, 0],
                      [0.0000000,  0.0000000,  1.0000000, 0],
                      [0, 0, 0, 1]])
-    sfy = 0.04/width  # scaling factors for pixel gaps, 0.04 and 0.05 are dimensions of pixels in meters
+    sfy = 0.04/width
     sfx = 0.05/height
 
-    # Build template by iterate thru x and y, going up z each time
     z=0
     for i in range(lowx, highx, 1):
         for j in range(lowy,highy,1):
-            # 4 x 4 transformation matrix
             T1 = torch.eye(4)
-            # change last column in transformation matrix
-            # multiply pixel by scaling factors to get actual location of pixel
             T1[0:3,3] = torch.tensor([i*sfx, j*sfy,0])
-            # transform T1 to x y plane
             Tr = T2@T1
             # ipdb.set_trace()
-            # add to transforms
             transforms[z] = torch.tensor(Tr)
             z+=1
-    # cast to double tensor
     transforms=transforms.type(torch.DoubleTensor)
 
-    # transforms is an array of transformation matrices
     return transforms
             
             
-# finds 3D locations of pixels in image
-def location_extractor(image, T3, width, height, transforms):
-    image=image.squeeze(0) # removes single dimension entries from shape of array
-    locations_3d = torch.empty(image.shape[0], image.shape[1], 3)  # create tensor of same dimension as image squeezed
 
-    T3_ = T3.unsqueeze(0) # dimension at size 1 inserted at position 0
-    T3_jumbo = T3_.repeat(510*522,1,1) # creates array that repeats T3_ 510*522 times at first dimension 
-    prod = T3_jumbo@transforms # transform template to get pixels
-    XYZ = prod[:,0:3,3]*10000 # get last column in prod for locations of pixels
-    locations_3d = torch.reshape(XYZ, (height,width,3)) # reshape XYZ to be 3 dimensional and match the height and width    
+def location_extractor(image, T3, width, height, transforms):
+    image=image.squeeze(0)
+    locations_3d = torch.empty(image.shape[0], image.shape[1], 3)
+
+    T3_ = T3.unsqueeze(0)
+    T3_jumbo = T3_.repeat(510*522,1,1)
+    prod = T3_jumbo@transforms
+    XYZ = prod[:,0:3,3] #*10000
+    locations_3d = torch.reshape(XYZ, (height,width,3))
 
     return locations_3d
 
@@ -73,8 +64,6 @@ def get_transformation1( pose ):
 
 
 def main():
-    x = torch.tensor([1, 2, 3])
-    print(x.repeat(4, 2, 1))
     with open('pps_config.yml', 'r') as stream:
         entries = yaml.load(stream, Loader=yaml.SafeLoader)
     print(entries)
@@ -129,9 +118,9 @@ def main():
     pose_file = '/home/ananya/ultranerf/Blue_gel_US/Lab_2/'+entries['train'][z]+'/poses.npy'
     poses = np.load(pose_file)
     
-    poses[:,3] = (poses[:,3] - xmin)/(xmax-xmin)
-    poses[:,4] = (poses[:,4] - ymin)/(ymax-ymin)
-    poses[:,5] = (poses[:,5] - zmin)/(zmax-zmin)
+    # poses[:,3] = (poses[:,3] - xmin)/(xmax-xmin)
+    # poses[:,4] = (poses[:,4] - ymin)/(ymax-ymin)
+    # poses[:,5] = (poses[:,5] - zmin)/(zmax-zmin)
 
     # ipdb.set_trace()
 
@@ -152,11 +141,13 @@ def main():
                 if(i==0):
                     xyz = location_extractor(image, T_rob2us, width, height, transform_mats)
                     samples3d = xyz.unsqueeze(0)
+                    # ipdb.set_trace()
                     
                 else: 
                     xyz = location_extractor(image, T_rob2us, width, height, transform_mats)
                     xyz = xyz.unsqueeze(0)
                     samples3d = torch.cat((samples3d, xyz), dim=0)
+
             else:
                 print(img_folder+'frame'+str(i-flag2+spts[z])+'.png')
                 image =  cv2.imread(img_folder+'frame'+str(i-flag2+spts[z])+'.png', cv2.COLOR_BGR2GRAY)
@@ -171,25 +162,24 @@ def main():
                 xyz = xyz.unsqueeze(0)
                 samples3d = torch.cat((samples3d, xyz), dim=0)
 
-
         else:
             z+=1
             img_folder = '/home/ananya/ultranerf/Blue_gel_US/Lab_2/'+entries['train'][z]+'_image/'
             pose_file = '/home/ananya/ultranerf/Blue_gel_US/Lab_2/'+entries['train'][z]+'/poses.npy'
             poses = np.load(pose_file)
             
-            poses[:,3] = (poses[:,3] - xmin)/(xmax-xmin)
-            poses[:,4] = (poses[:,4] - ymin)/(ymax-ymin)
-            poses[:,5] = (poses[:,5] - zmin)/(zmax-zmin)
+            # poses[:,3] = (poses[:,3] - xmin)/(xmax-xmin)
+            # poses[:,4] = (poses[:,4] - ymin)/(ymax-ymin)
+            # poses[:,5] = (poses[:,5] - zmin)/(zmax-zmin)
             flag2=i
             continue
             
         i+=1
 
-    tr_samples3d_np = samples3d.numpy()        
-    # ipdb.set_trace()
-    np.save('training_image_samples.npy', tr_samples3d_np)
+    # tr_samples3d_np = samples3d.numpy()   
 
+    # ipdb.set_trace()
+    # np.save('training_image_samples2.npy', tr_samples3d_np)
 
 
 
@@ -204,9 +194,9 @@ def main():
     pose_file = '/home/ananya/ultranerf/Blue_gel_US/Lab_2/'+entries['val'][z]+'/poses.npy'
     poses = np.load(pose_file)
     
-    poses[:,3] = (poses[:,3] - xmin)/(xmax-xmin)
-    poses[:,4] = (poses[:,4] - ymin)/(ymax-ymin)
-    poses[:,5] = (poses[:,5] - zmin)/(zmax-zmin)
+    # poses[:,3] = (poses[:,3] - xmin)/(xmax-xmin)
+    # poses[:,4] = (poses[:,4] - ymin)/(ymax-ymin)
+    # poses[:,5] = (poses[:,5] - zmin)/(zmax-zmin)
     # ipdb.set_trace()
 
     flag2=0
@@ -223,14 +213,15 @@ def main():
                 pose = poses[i][3:]
                 T_rob2us = torch.tensor(get_transformation1(pose))
 
-                if(i==0):
-                    xyz = location_extractor(image, T_rob2us, width, height, transform_mats)
-                    samples3d = xyz.unsqueeze(0)
+                # if(i==0):
+                #     xyz = location_extractor(image, T_rob2us, width, height, transform_mats)
+                #     samples3d = xyz.unsqueeze(0)
                     
-                else: 
-                    xyz = location_extractor(image, T_rob2us, width, height, transform_mats)
-                    xyz = xyz.unsqueeze(0)
-                    samples3d = torch.cat((samples3d, xyz), dim=0)
+                # else: 
+                xyz = location_extractor(image, T_rob2us, width, height, transform_mats)
+                xyz = xyz.unsqueeze(0)
+                samples3d = torch.cat((samples3d, xyz), dim=0)
+                
             else:
                 print(img_folder+'frame'+str(i-flag2+spts[z])+'.png')
                 # ipdb.set_trace()
@@ -253,17 +244,39 @@ def main():
             pose_file = '/home/ananya/ultranerf/Blue_gel_US/Lab_2/'+entries['val'][z]+'/poses.npy'
             poses = np.load(pose_file)
             
-            poses[:,3] = (poses[:,3] - xmin)/(xmax-xmin)
-            poses[:,4] = (poses[:,4] - ymin)/(ymax-ymin)
-            poses[:,5] = (poses[:,5] - zmin)/(zmax-zmin)
+            # poses[:,3] = (poses[:,3] - xmin)/(xmax-xmin)
+            # poses[:,4] = (poses[:,4] - ymin)/(ymax-ymin)
+            # poses[:,5] = (poses[:,5] - zmin)/(zmax-zmin)
             flag2=i
             # ipdb.set_trace()
             continue
             
         i+=1
 
-    val_samples3d_np = samples3d.numpy() 
-    np.save('val_image_samples.npy', val_samples3d_np)
+    
+
+    xmax= torch.max(samples3d[:,:,:,0])
+    xmin= torch.min(samples3d[:,:,:,0])
+    ymax= torch.max(samples3d[:,:,:,1])
+    ymin= torch.min(samples3d[:,:,:,1])
+    zmax= torch.max(samples3d[:,:,:,2])
+    zmin= torch.min(samples3d[:,:,:,2])
+
+    samples3d[:,:,:,0] = (samples3d[:,:,:,0] - xmin)/(xmax-xmin)
+    samples3d[:,:,:,1] = (samples3d[:,:,:,1] - ymin)/(ymax-ymin)
+    samples3d[:,:,:,2] = (samples3d[:,:,:,2] - zmin)/(zmax-zmin)
+
+    # ipdb.set_trace()
+
+    samples3d*=2
+    samples3d = samples3d-1
+
+    # ipdb.set_trace()
+
+    tr_samples3d_np = samples3d[0:training_samples,:,:,:].numpy()   
+    val_samples3d_np = samples3d[training_samples:training_samples+val_samples,:,:,:].numpy() 
+    np.save('training_image_samples2.npy', tr_samples3d_np)
+    np.save('val_image_samples2.npy', val_samples3d_np)
     # ipdb.set_trace()
 
 
