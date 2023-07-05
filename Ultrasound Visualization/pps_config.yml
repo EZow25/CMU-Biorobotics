@@ -1,0 +1,23 @@
+#Rendering and sampling params
+kernel: 5  #Kernel Size for applying convolutions in US Rendering
+freq: 12 #Frequency of US Transducer
+sigma_x: 0.4 #Used in PSF | The axial resolution is between 0.145–1.45 mm, when a speed of sound c between 1450–1600 m/s is assumed, and transducers with frequencies between 1–10 MHz are used.
+sigma_y: 1.2 #used in PSF | usually between 0.4–3 mm
+ray_gap: 1
+sample_gap: 1
+# Citation: B. Burger, S. Bettinghausen, M. Radle and J. Hesser, "Real-Time GPU-Based Ultrasound Simulation Using Deformable Mesh Models," in IEEE Transactions on Medical Imaging, vol. 32, no. 3, pp. 609-618, March 2013, doi: 10.1109/TMI.2012.2234474.
+# B. Burger, S. Bettinghausen, M. Radle and J. Hesser, "Real-Time GPU-Based Ultrasound Simulation Using Deformable Mesh Models," in , vol. 32, no. 3, pp. 609-618, March 2013, doi: 10.1109/TMI.2012.2234474.
+
+#training params
+epochs: 1000
+
+#image dimensions
+width: 522
+height: 510
+
+#data preprocessing (train/val split)
+train: ['Trial_3']
+val: ['Trial_4',  'Trial_5']
+
+sidx: [200, 270, 65]
+eidx: [1001, 601, 356]
