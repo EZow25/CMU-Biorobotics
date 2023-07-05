@@ -11,7 +11,7 @@ import transforms3d as t3d
 from itertools import accumulate
 import operator
 
-
+# builds the template of x y transformation matrices at each z level
 def template_gen(width, height):
     transforms = torch.zeros((height*width, 4, 4))
     lowx = 0 
@@ -19,37 +19,46 @@ def template_gen(width, height):
     lowy = int(0-width/2)
     highy = int(width/2)
 
+    # rotation matrix to rotate image plane to xy for ease of use
     T2 = torch.tensor([  [0.0000000,  -1.0000000,  0.0000000, 0],
                      [1.0000000,  0.0000000,  0.0000000, 0],
                      [0.0000000,  0.0000000,  1.0000000, 0],
                      [0, 0, 0, 1]])
-    sfy = 0.04/width
+    sfy = 0.04/width  # scaling factors for pixel gaps, 0.04 and 0.05 are dimensions of pixels in meters
     sfx = 0.05/height
 
+    # Build template by iterate thru x and y, going up z each time
     z=0
     for i in range(lowx, highx, 1):
         for j in range(lowy,highy,1):
+            # 4 x 4 transformation matrix
             T1 = torch.eye(4)
+            # change last column in transformation matrix
+            # multiply pixel by scaling factors to get actual location of pixel
             T1[0:3,3] = torch.tensor([i*sfx, j*sfy,0])
+            # transform T1 to x y plane
             Tr = T2@T1
             # ipdb.set_trace()
+            # add to transforms
             transforms[z] = torch.tensor(Tr)
             z+=1
+    # cast to double tensor
     transforms=transforms.type(torch.DoubleTensor)
 
+    # transforms is an array of transformation matrices
     return transforms
             
             
-
+# finds 3D locations of pixels in image
 def location_extractor(image, T3, width, height, transforms):
-    image=image.squeeze(0)
-    locations_3d = torch.empty(image.shape[0], image.shape[1], 3)
+    image=image.squeeze(0) # removes single dimension entries from shape of array
+    locations_3d = torch.empty(image.shape[0], image.shape[1], 3)  # create tensor of same dimension as image squeezed
 
-    T3_ = T3.unsqueeze(0)
-    T3_jumbo = T3_.repeat(510*522,1,1)
-    prod = T3_jumbo@transforms
-    XYZ = prod[:,0:3,3]*10000
-    locations_3d = torch.reshape(XYZ, (height,width,3))
+    T3_ = T3.unsqueeze(0) # dimension at size 1 inserted at position 0
+    T3_jumbo = T3_.repeat(510*522,1,1) # creates array that repeats T3_ 510*522 times at first dimension 
+    prod = T3_jumbo@transforms # transform template to get pixels
+    XYZ = prod[:,0:3,3]*10000 # get last column in prod for locations of pixels
+    locations_3d = torch.reshape(XYZ, (height,width,3)) # reshape XYZ to be 3 dimensional and match the height and width    
 
     return locations_3d
 
@@ -64,6 +73,8 @@ def get_transformation1( pose ):
 
 
 def main():
+    x = torch.tensor([1, 2, 3])
+    print(x.repeat(4, 2, 1))
     with open('pps_config.yml', 'r') as stream:
         entries = yaml.load(stream, Loader=yaml.SafeLoader)
     print(entries)
