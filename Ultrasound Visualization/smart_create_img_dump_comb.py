@@ -56,10 +56,10 @@ def location_extractor(image, T3, width, height, transforms):
 
 
 def get_transformation1( pose ):
-        T_ru = np.eye(4)
-        T_ru[0:3, 0:3] = t3d.quaternions.quat2mat([pose[6],pose[3],pose[4],pose[5]])
-        T_ru[0:3, 3] = [pose[0], pose[1], pose[2]]
-        return T_ru
+    T_ru = np.eye(4)
+    T_ru[0:3, 0:3] = t3d.quaternions.quat2mat([pose[6],pose[3],pose[4],pose[5]])
+    T_ru[0:3, 3] = [pose[0], pose[1], pose[2]]
+    return T_ru
 
 
 
