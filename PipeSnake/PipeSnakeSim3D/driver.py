@@ -17,7 +17,7 @@ def main():
     
     fig = plt.figure()
     ax = fig.add_subplot(projection="3d")
-    # ax.get_proj = lambda: np.dot(Axes3D.get_proj(ax), np.diag([2, 2, 0.5, 2]))
+    ax.get_proj = lambda: np.dot(Axes3D.get_proj(ax), np.diag([1,1,1,1]))
     ax.scatter(p.x, p.y, p.z, alpha=0.5)
     plt.title("PipeSnake Simulation")
     ax.set_xlabel("x (meters)")

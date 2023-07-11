@@ -134,7 +134,7 @@ class Pipe:
                     return T_ru
                 
                 def transform_cross(rotate, translate):
-                    pose = [x, y, 0, 0, 0, math.sin(rotate/2), math.cos(rotate/2)]
+                    pose = [0 - y + 0.33, y + 0.33, 0, 0, 0, math.sin(rotate/2), math.cos(rotate/2)]
                     T = get_transformation1(pose)
                     x_cross_copy = x_cross.copy()
                     y_cross_copy = y_cross.copy()
@@ -145,14 +145,15 @@ class Pipe:
                             x_cross_copy[i][j] = p[0]
                             y_cross_copy[i][j] = p[1]
                             z_cross_copy[i][j] = p[2]
-                
+                    
+                    
                     self.x = np.append(self.x, x_cross_copy, axis=1)
                     self.y = np.append(self.y, y_cross_copy, axis=1)
                     self.z = np.append(self.z, z_cross_copy, axis=1)
                 
                 theta = -np.pi/2
-                transform_cross(theta/2, 0)
-                transform_cross(theta, 0.33)
+                # transform_cross(theta/2, 0)
+                transform_cross(theta, 0)
                 self.start_pt = (x + 0.33, y + 0.33, z)
                 self.direction = "+x"
                 
