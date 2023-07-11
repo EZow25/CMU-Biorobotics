@@ -80,6 +80,8 @@ def main():
 
     allposes=0
     flag=False
+    # build allposes to get the poses from the pose.npy file
+    # allposes is only important for its dimensions for getting the value of training_samples and val_samples
     for i in range(train_sweeps):
         pose_file = '/home/ananya/ultranerf/Blue_gel_US/Lab_2/'+entries['train'][i]+'/poses.npy'
         poses_ = np.load(pose_file)
@@ -88,6 +90,7 @@ def main():
             allposes=poses_
         else:
             allposes = np.concatenate((allposes,poses_), axis=0)
+
 
     training_samples = allposes.shape[0]
 
@@ -124,6 +127,7 @@ def main():
 
     # ipdb.set_trace()
 
+    # iterate thru the poses
     flag2=0
     i=0
     while(i<training_samples):

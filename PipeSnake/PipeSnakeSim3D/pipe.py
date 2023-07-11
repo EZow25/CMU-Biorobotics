@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import transforms3d as t3d
+import math
 
 class Pipe:
     def __init__(self, radius, start_pt):
@@ -12,6 +13,8 @@ class Pipe:
         self.direction = "+y"
         # direction specifies what axis to extend the pipe and in what direction along the axis
         # default is +y
+        self.resolution = 5
+        # resolutions specifies how "smooth" the pipe will look, higher values lead to more smoothness but more processing
             
     # Draws a straight pipe of length 1.53 meters of specified radius
     # units of the pipe is meters
@@ -26,8 +29,8 @@ class Pipe:
         y_grid = np.array(0)
         z_grid = np.array(0)
         if self.direction == "+y":
-            y_pts = np.linspace(center_y, center_y + 1.53, 30)
-            theta = np.linspace(0, 2*np.pi,30)
+            y_pts = np.linspace(center_y, center_y + 1.53, self.resolution)
+            theta = np.linspace(0, 2*np.pi, self.resolution)
             theta_grid, y_grid=np.meshgrid(theta, y_pts)
             x_grid = self.radius*np.cos(theta_grid) + center_x
             z_grid = self.radius*np.sin(theta_grid) + center_z
@@ -35,8 +38,8 @@ class Pipe:
             self.start_pt = (center_x, center_y + 1.53, center_z)
             
         elif self.direction == "-y":
-            y_pts = np.linspace(center_y - 1.53, center_y, 30)
-            theta = np.linspace(0, 2*np.pi,30)
+            y_pts = np.linspace(center_y - 1.53, center_y, self.resolution)
+            theta = np.linspace(0, 2*np.pi, self.resolution)
             theta_grid, y_grid=np.meshgrid(theta, y_pts)
             x_grid = self.radius*np.cos(theta_grid) + center_x
             z_grid = self.radius*np.sin(theta_grid) + center_z
@@ -44,8 +47,8 @@ class Pipe:
             self.start_pt = (center_x, center_y - 1.53, center_z)
             
         elif self.direction == "+x":
-            x_pts = np.linspace(center_x, center_x + 1.53, 30)
-            theta = np.linspace(0, 2*np.pi,30)
+            x_pts = np.linspace(center_x, center_x + 1.53, self.resolution)
+            theta = np.linspace(0, 2*np.pi, self.resolution)
             theta_grid, x_grid=np.meshgrid(theta, x_pts)
             y_grid = self.radius*np.cos(theta_grid) + center_y
             z_grid = self.radius*np.sin(theta_grid) + center_z
@@ -53,8 +56,8 @@ class Pipe:
             self.start_pt = (center_x + 1.53, center_y, center_z)
              
         elif self.direction == "-x":
-            x_pts = np.linspace(center_x - 1.53, center_x, 30)
-            theta = np.linspace(0, 2*np.pi,30)
+            x_pts = np.linspace(center_x - 1.53, center_x, self.resolution)
+            theta = np.linspace(0, 2*np.pi, self.resolution)
             theta_grid, x_grid=np.meshgrid(theta, x_pts)
             y_grid = self.radius*np.cos(theta_grid) + center_y
             z_grid = self.radius*np.sin(theta_grid) + center_z
@@ -62,8 +65,8 @@ class Pipe:
             self.start_pt = (center_x - 1.53, center_y, center_z)
             
         elif self.direction == "+z":
-            z_pts = np.linspace(center_z, center_z + 1.53, 30)
-            theta = np.linspace(0, 2*np.pi,30)
+            z_pts = np.linspace(center_z, center_z + 1.53, self.resolution)
+            theta = np.linspace(0, 2*np.pi, self.resolution)
             theta_grid, z_grid=np.meshgrid(theta, z_pts)
             x_grid = self.radius*np.cos(theta_grid) + center_x
             y_grid = self.radius*np.sin(theta_grid) + center_y
@@ -71,8 +74,8 @@ class Pipe:
             self.start_pt = (center_x, center_y, center_z + 1.53)
             
         elif self.direction == "-z":
-            z_pts = np.linspace(center_z - 1.53, center_z, 30)
-            theta = np.linspace(0, 2*np.pi,30)
+            z_pts = np.linspace(center_z - 1.53, center_z, self.resolution)
+            theta = np.linspace(0, 2*np.pi,self.resolution)
             theta_grid, z_grid=np.meshgrid(theta, z_pts)
             x_grid = self.radius*np.cos(theta_grid) + center_x
             y_grid = self.radius*np.sin(theta_grid) + center_y
@@ -95,9 +98,9 @@ class Pipe:
         else:
             self.z = np.append(self.z, z_grid, axis=1)
             
-        print(self.x.shape)
-        print(self.y.shape)
-        print(self.z.shape)
+        # print(self.x.shape)
+        # print(self.y.shape)
+        # print(self.z.shape)
         
         print("Straight pipe added successfully, Direction: " + self.direction)
       
@@ -115,27 +118,52 @@ class Pipe:
             print("Unimplemented")
         elif turn_to == "+x":
             if self.direction == "+y":
-                # build quaternion axis, TODO
-                xr, yr, zr = (x + self.radius, y + 0.5, z)
-                xl, yl, zl = (x - self.radius, y + 1.5, z)
-                axis_rot = [(xr - xl), (yr - yl), z]
-                
                 # collect points of cross section at end of pipe 
-                y_pts = np.repeat(y, 30)
-                theta = np.linspace(0, 2*np.pi,30)
+                y_pts = np.repeat(y, self.resolution)
+                theta = np.linspace(0, 2*np.pi, self.resolution)
                 theta_grid, y_cross=np.meshgrid(theta, y_pts)
                 x_cross = self.radius*np.cos(theta_grid) + x
                 z_cross = self.radius*np.sin(theta_grid) + z
-                x_cross = x_cross[0]
-                y_cross = y_cross[0]
-                z_cross = z_cross[0]
                    
                 # rotate points of cross section in small increments
-                def get_transformation():
+                def get_transformation1(pose):
                     T_ru = np.eye(4)
-                    T_ru[0:3, 0:3] = t3d.quaternions.quat2mat(axis_rot)
-                    
-                # add each incremental rotation to self.x, self.y, and self.z         
+                    T_ru[0:3, 0:3] = t3d.quaternions.quat2mat([pose[6],pose[3],pose[4],pose[5]])
+                    T_ru[0:3, 3] = [pose[0], pose[1], pose[2]]
+    
+                    return T_ru
+                theta = np.pi/2
+                rotate = np.linspace(0, theta, self.resolution)
+                translate = np.linspace(0, 0.33, self.resolution)
+                print(rotate)
+                print(translate)
+                # Transforms = []
+                # for i in range(self.resolution):
+                #     pose = [x + translate[i], y + translate[i], 0, 0, 0, math.sin(rotate[i]/2), math.cos(rotate[i]/2)]
+                #     Transforms.append(get_transformation1(pose))
+                pose = [x + 0.33, y + 0.33, 0, 0, 0, math.sin(-theta/2), math.cos(-theta/2)]
+                T = get_transformation1(pose)
+                # for T in Transforms:
+                #     for i in range(self.resolution):
+                #         for j in range(self.resolution):
+                #             p = np.array([x_cross[i][j], y_cross[i][j], z_cross[i][j], 1])
+                #             p = np.matmul(T, p)
+                #             x_cross[i][j] = p[0]
+                #             y_cross[i][j] = p[1]
+                #             z_cross[i][j] = p[2]
+                for i in range(self.resolution):
+                    for j in range(self.resolution):
+                        p = np.matmul(T, [x_cross[i][j], y_cross[i][j], z_cross[i][j], 1])
+                        x_cross[i][j] = p[0]
+                        y_cross[i][j] = p[1]
+                        z_cross[i][j] = p[2]
+                
+                self.x = np.append(self.x, x_cross, axis=1)
+                self.y = np.append(self.y, y_cross, axis=1)
+                self.z = np.append(self.z, z_cross, axis=1)
+                
+                self.start_pt = (x + 0.33, y + 0.33, z)
+                self.direction = "+x"             
         elif turn_to == "-x":
             print("Unimplemented")
         elif turn_to == "+z":
