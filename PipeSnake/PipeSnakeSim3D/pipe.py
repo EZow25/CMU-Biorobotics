@@ -132,17 +132,35 @@ class Pipe:
                     T_ru[0:3, 3] = [pose[0], pose[1], pose[2]]
     
                     return T_ru
-                theta = np.pi/2
-                rotate = np.linspace(0, theta, self.resolution)
-                translate = np.linspace(0, 0.33, self.resolution)
-                print(rotate)
-                print(translate)
+                
+                def transform_cross(rotate, translate):
+                    pose = [x, y, 0, 0, 0, math.sin(rotate/2), math.cos(rotate/2)]
+                    T = get_transformation1(pose)
+                    x_cross_copy = x_cross.copy()
+                    y_cross_copy = y_cross.copy()
+                    z_cross_copy = z_cross.copy()
+                    for i in range(self.resolution):
+                        for j in range(self.resolution):
+                            p = np.matmul(T, [x_cross[i][j], y_cross[i][j], z_cross[i][j], 1])
+                            x_cross_copy[i][j] = p[0]
+                            y_cross_copy[i][j] = p[1]
+                            z_cross_copy[i][j] = p[2]
+                
+                    self.x = np.append(self.x, x_cross_copy, axis=1)
+                    self.y = np.append(self.y, y_cross_copy, axis=1)
+                    self.z = np.append(self.z, z_cross_copy, axis=1)
+                
+                theta = -np.pi/2
+                transform_cross(theta/2, 0)
+                transform_cross(theta, 0.33)
+                self.start_pt = (x + 0.33, y + 0.33, z)
+                self.direction = "+x"
+                
                 # Transforms = []
                 # for i in range(self.resolution):
                 #     pose = [x + translate[i], y + translate[i], 0, 0, 0, math.sin(rotate[i]/2), math.cos(rotate[i]/2)]
                 #     Transforms.append(get_transformation1(pose))
-                pose = [x + 0.33, y + 0.33, 0, 0, 0, math.sin(-theta/2), math.cos(-theta/2)]
-                T = get_transformation1(pose)
+
                 # for T in Transforms:
                 #     for i in range(self.resolution):
                 #         for j in range(self.resolution):
@@ -150,20 +168,7 @@ class Pipe:
                 #             p = np.matmul(T, p)
                 #             x_cross[i][j] = p[0]
                 #             y_cross[i][j] = p[1]
-                #             z_cross[i][j] = p[2]
-                for i in range(self.resolution):
-                    for j in range(self.resolution):
-                        p = np.matmul(T, [x_cross[i][j], y_cross[i][j], z_cross[i][j], 1])
-                        x_cross[i][j] = p[0]
-                        y_cross[i][j] = p[1]
-                        z_cross[i][j] = p[2]
-                
-                self.x = np.append(self.x, x_cross, axis=1)
-                self.y = np.append(self.y, y_cross, axis=1)
-                self.z = np.append(self.z, z_cross, axis=1)
-                
-                self.start_pt = (x + 0.33, y + 0.33, z)
-                self.direction = "+x"             
+                #             z_cross[i][j] = p[2]             
         elif turn_to == "-x":
             print("Unimplemented")
         elif turn_to == "+z":
