@@ -10,11 +10,10 @@ def main():
     # print(c)
     # print(d)
     
-    p = Pipe(0.1625, (0.,0.,0.))
+    p = Pipe(0.1625, (0,0,0))      
     p.add_straight_pipe()
-    p.add_turn("+x")
-    # p.add_straight_pipe()
-    
+    p.add_turn("-z")
+    p.add_straight_pipe()
     fig = plt.figure()
     ax = fig.add_subplot(projection="3d")
     # ax.get_proj = lambda: np.dot(Axes3D.get_proj(ax), np.diag([1,1,1,1]))
